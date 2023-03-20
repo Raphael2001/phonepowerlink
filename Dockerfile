@@ -1,6 +1,8 @@
 FROM python:3.9-slim
 
-Run pip install -r requirements.txt
+COPY requirements.txt /tmp/
+
+RUN pip install --requirement /tmp/requirements.txt
 Run pip install gunicorn
 
 COPY src/ src/
