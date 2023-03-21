@@ -1,7 +1,7 @@
-from src.Main.helpers import BaseApi, PowerLinkApi
-from flask_restful import reqparse
+from src.Main.helpers import  PowerLinkApi
+from flask_restful import reqparse, Resource
 
-class Task(BaseApi):
+class Task(Resource):
 
     def post(self):
         parser = reqparse.RequestParser()  # initialize
@@ -11,10 +11,9 @@ class Task(BaseApi):
         args = parser.parse_args()
 
         account_id = args["accountid"]
-        self.uid = args["tokenid"]
+        uid = args["tokenid"]
         name = args["name"]
-        headers = self.create_headers()
-        PowerLinkApi(headers).create_task(account_id, name)
+        PowerLinkApi(uid).create_task(account_id, name)
         return {
             'statuscode': 200,
             'body': account_id,

@@ -1,5 +1,5 @@
 from requests import get
-from MailFunctions import send_message
+from src.MailsModule.MailFunctions import send_message
 from src.Constas import ERRORS_RECIPIENTS_MAILS
 
 ip = get('https://api.ipify.org').text
