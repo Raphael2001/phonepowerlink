@@ -1,7 +1,8 @@
-from src.Main.helpers import BaseApi, PowerLinkApi
-from flask_restful import reqparse
+from src.Main.helpers import  PowerLinkApi
+from flask_restful import reqparse, Resource
 
-class Phone(BaseApi):
+
+class Phone(Resource):
     def post(self):
         parser = reqparse.RequestParser()  # initialize
         parser.add_argument('phonenumber', required=True, location='json', help="phonenumber is missing")
@@ -14,10 +15,9 @@ class Phone(BaseApi):
         account_id = args["accountid"]
         phone_number = args["phonenumber"]
         phone_object_id = args["phoneobjectid"]
-        self.uid = args["tokenid"]
+        uid = args["tokenid"]
         name = args["name"]
-        headers = self.create_headers()
-        power_link = PowerLinkApi(headers)
+        power_link = PowerLinkApi(uid)
         if not account_id:
             response = power_link.create_client_with_phone_number(phone_number)
             account_id = response["data"]["Record"]["accountid"]

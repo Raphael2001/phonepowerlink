@@ -1,4 +1,4 @@
-from flask_restful import Resource, Api, reqparse, abort
+from flask_restful import Resource, abort
 from src.Constas import POWER_LINK_URL
 from src.TimeModule.Time import *
 import requests
@@ -39,21 +39,16 @@ def get_next_time_for_task():
         return get_task_date(now, 1, 0)
 
 
+class PowerLinkApi:
 
-class BaseApi(Resource):
-    def __init__(self):
-        self.uid = None
+    def __init__(self, uid):
+        self.phone_number = ""
+        self.uid = uid
+        self.headers = self.create_headers()
 
     def create_headers(self):
         return {"Content-type": "application/json",
                 "tokenid": self.uid}
-
-
-class PowerLinkApi:
-
-    def __init__(self, headers):
-        self.headers = headers
-        self.phone_number = ""
 
     def get_client_to_create(self):
         return {
@@ -70,7 +65,10 @@ class PowerLinkApi:
         try:
             return json.loads(response.content)
         except Exception as e:
-            create_error_mail(response.content)
+            msg = f"The data is: phone: {phone_number}, uid: {self.uid}"
+            msg += response.content.decode("utf-8")
+            create_error_mail(msg)
+            abort_api(500, msg)
 
     def update_phone_record_with_client(self, object_id, account_id):
         url = POWER_LINK_URL + f"record/calllog/{object_id}"
@@ -96,3 +94,8 @@ class PowerLinkApi:
         url = POWER_LINK_URL + f"record/account/{account_id}"
         response = requests.get(url, headers=self.headers)
         return json.loads(response.content)["data"]["Record"]["accountname"]
+
+
+def abort_api(status_code, message, body=None):
+    abort(status_code, status="ERROR", body=body, message=message)
+
