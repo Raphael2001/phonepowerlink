@@ -4,7 +4,6 @@ from src.Constas import ERRORS_RECIPIENTS_MAILS
 
 ip = get('https://api.ipify.org').text
 
-
 def get_text_n_html(error):
     text = f"sent from my server {ip}"
 
