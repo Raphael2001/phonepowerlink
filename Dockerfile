@@ -3,7 +3,7 @@ FROM python:3.9-slim
 COPY requirements.txt /tmp/
 
 RUN pip install --requirement /tmp/requirements.txt
-Run pip install gunicorn
+RUN pip install gunicorn
 
 COPY src/ src/
 

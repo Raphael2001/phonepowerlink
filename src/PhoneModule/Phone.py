@@ -1,5 +1,6 @@
-from src.Main.helpers import  PowerLinkApi
+from src.Main.helpers import  PowerLinkApi, get_problem_with_api_response
 from flask_restful import reqparse, Resource
+from src.DatabaseModule.ApiLogs import *
 
 
 class Phone(Resource):
@@ -17,13 +18,21 @@ class Phone(Resource):
         phone_object_id = args["phoneobjectid"]
         uid = args["tokenid"]
         name = args["name"]
-        power_link = PowerLinkApi(uid)
+        add_api_log(method_name="Api - Phone", body=args, key=phone_object_id)
+
+        power_link = PowerLinkApi(uid, phone_object_id)
         if not account_id:
             response = power_link.create_client_with_phone_number(phone_number)
+            if not response:
+                return get_problem_with_api_response()
             account_id = response["data"]["Record"]["accountid"]
             name = response["data"]["Record"]["accountname"]
-            power_link.update_phone_record_with_client(phone_object_id, account_id)
-        power_link.create_task(account_id, name)
+            response = power_link.update_phone_record_with_client(account_id)
+            if not response:
+                return get_problem_with_api_response()
+        response = power_link.create_task(account_id, name)
+        if not response:
+            return get_problem_with_api_response()
         return {
             'statuscode': 200,
             'body': account_id,

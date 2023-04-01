@@ -1,9 +1,9 @@
-from flask_restful import Resource, abort
+from flask_restful import abort
 from src.Constas import POWER_LINK_URL
 from src.TimeModule.Time import *
 import requests
 import json
-from src.MailsModule.ErrorMail import create_error_mail
+from src.DatabaseModule.ApiLogs import *
 
 
 def get_task_date(date, added_days, added_hours):
@@ -39,9 +39,51 @@ def get_next_time_for_task():
         return get_task_date(now, 1, 0)
 
 
-class PowerLinkApi:
+class OutSideApi:
+    def __init__(self, key):
+        self.key = key
+        self.headers = {}
+        self.url = ""
+        self.payload = None
+        self.method_name = ""
 
-    def __init__(self, uid):
+    def post(self):
+        response = requests.post(self.url, data=json.dumps(self.payload), headers=self.headers)
+        is_success, data = self.handle_response(response)
+        return data if is_success else is_success
+
+    def put(self):
+        response = requests.put(self.url, data=json.dumps(self.payload), headers=self.headers)
+        is_success, data = self.handle_response(response)
+        return data if is_success else is_success
+    
+    def get(self):
+        self.payload = None
+        response = requests.get(self.url, headers=self.headers)
+        is_success, data = self.handle_response(response)
+        return data if is_success else is_success
+
+    def handle_response(self, response):
+        is_success = True
+        if 200 <= response.status_code < 400:
+            json_response = json.loads(response.content)
+            response_data = json_response
+
+        else:
+            response_data = response.content.decode("utf-8")
+            is_success = False
+
+        add_api_log(self.url, self.method_name, response.status_code, self.payload, response_data, self.headers,
+                    self.key)
+
+        return is_success, response_data
+
+
+class PowerLinkApi(OutSideApi):
+
+    def __init__(self, uid, call_log_id):
+
+        super().__init__(call_log_id)
         self.phone_number = ""
         self.uid = uid
         self.headers = self.create_headers()
@@ -57,45 +99,55 @@ class PowerLinkApi:
         }
 
     def create_client_with_phone_number(self, phone_number):
-        url = POWER_LINK_URL + "record/account"
+        self.url = POWER_LINK_URL + "record/account"
         self.phone_number = phone_number
-        client_to_create = self.get_client_to_create()
+        self.payload = self.get_client_to_create()
+        self.method_name = "PowerLink - create client"
+        return self.post()
+     
 
-        response = requests.post(url, data=json.dumps(client_to_create), headers=self.headers)
-        try:
-            return json.loads(response.content)
-        except Exception as e:
-            msg = f"The data is: phone: {phone_number}, uid: {self.uid}"
-            msg += response.content.decode("utf-8")
-            create_error_mail(msg)
-            abort_api(500, msg)
-
-    def update_phone_record_with_client(self, object_id, account_id):
-        url = POWER_LINK_URL + f"record/calllog/{object_id}"
-        data = {
+    def update_phone_record_with_client(self, account_id):
+        self.url = POWER_LINK_URL + f"record/calllog/{self.key}"
+        self.payload = {
             "accountid": account_id
         }
-        response = requests.put(url, data=json.dumps(data), headers=self.headers)
-        return json.loads(response.content)
+        self.method_name = "PowerLink - update phone log"
+        return self.put()
 
-    def create_task(self,account_id, name):
-        url = POWER_LINK_URL + "record/Task"
-        data = {
+
+    def create_task(self, account_id, name):
+        self.url = POWER_LINK_URL + "record/Task"
+        self.payload = {
             "objecttypecode": "1",
             "objectid": account_id,
             "subject": "שיחה לא נענתה מ" + name,
             "scheduledend": get_next_time_for_task(),
             "objecttitle": name
         }
-        response = requests.post(url, data=json.dumps(data), headers=self.headers)
-        return json.loads(response.content)
+        self.method_name = "PowerLink - create task"
+        return self.post()
 
-    def get_client_name(self,account_id):
-        url = POWER_LINK_URL + f"record/account/{account_id}"
-        response = requests.get(url, headers=self.headers)
-        return json.loads(response.content)["data"]["Record"]["accountname"]
+    def get_client(self, account_id):
+        self.url = POWER_LINK_URL + f"record/account/{account_id}"
+        self.method_name = "PowerLink - get client"
+        return self.get()
+
+
+    def get_client_name(self, account_id):
+        data = self.get_client(account_id)
+        if data:
+            return data["data"]["Record"]["accountname"]
+        else:
+            return data
 
 
 def abort_api(status_code, message, body=None):
     abort(status_code, status="ERROR", body=body, message=message)
 
+
+def get_problem_with_api_response():
+    return {
+        'statuscode': 200,
+        'body': {},
+        'message': "problem with the request",
+    }
