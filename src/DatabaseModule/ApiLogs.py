@@ -17,7 +17,7 @@ def add_api_log(url=None, method_name="", status_code=None, body=None, response=
     if headers:
         data["headers"] = headers
 
-    if status_code >=400:
+    if status_code and status_code >=400:
         msg = f"There is a error in {method_name} see the logs for more info"
         create_error_mail(msg)
     apilogs_ref.insert_one(data)
