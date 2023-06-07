@@ -56,7 +56,7 @@ class OutSideApi:
         response = requests.put(self.url, data=json.dumps(self.payload), headers=self.headers)
         is_success, data = self.handle_response(response)
         return data if is_success else is_success
-    
+
     def get(self):
         self.payload = None
         response = requests.get(self.url, headers=self.headers)
@@ -104,7 +104,6 @@ class PowerLinkApi(OutSideApi):
         self.payload = self.get_client_to_create()
         self.method_name = "PowerLink - create client"
         return self.post()
-     
 
     def update_phone_record_with_client(self, account_id):
         self.url = POWER_LINK_URL + f"record/calllog/{self.key}"
@@ -114,15 +113,15 @@ class PowerLinkApi(OutSideApi):
         self.method_name = "PowerLink - update phone log"
         return self.put()
 
-
-    def create_task(self, account_id, name):
+    def create_task(self, account_id, name, task_type):
         self.url = POWER_LINK_URL + "record/Task"
         self.payload = {
             "objecttypecode": "1",
             "objectid": account_id,
             "subject": "שיחה לא נענתה מ" + name,
             "scheduledend": get_next_time_for_task(),
-            "objecttitle": name
+            "objecttitle": name,
+            "tasktypecode": task_type,
         }
         self.method_name = "PowerLink - create task"
         return self.post()
@@ -131,7 +130,6 @@ class PowerLinkApi(OutSideApi):
         self.url = POWER_LINK_URL + f"record/account/{account_id}"
         self.method_name = "PowerLink - get client"
         return self.get()
-
 
     def get_client_name(self, account_id):
         data = self.get_client(account_id)
