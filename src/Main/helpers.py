@@ -96,6 +96,7 @@ class PowerLinkApi(OutSideApi):
         return {
             "accountname": "לקוח חדש " + str(self.phone_number),
             "telephone1": self.phone_number,
+            "pcfLastCallLogObject": self.key,
         }
 
     def create_client_with_phone_number(self, phone_number):
