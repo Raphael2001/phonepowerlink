@@ -18,7 +18,7 @@ class Task(Resource):
         uid = args["tokenid"]
         name = args["name"]
         call_log_id = args["phoneobjectid"]
-        task_type = args["tasktypecode"]
+        task_type = args["tasktype"]
         add_api_log(method_name="Api - Task", body=args, key=call_log_id)
 
         response = PowerLinkApi(uid, call_log_id).create_task(account_id, name, task_type)
